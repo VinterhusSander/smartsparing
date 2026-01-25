@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import { requireApiKey } from "./middleware/requireApiKey.js";
+
 
 const app = express();
 const PORT = 3000;
@@ -23,7 +25,7 @@ app.get("/api/goals", (req, res) => {
   ]);
 });
 
-app.post("/api/goals", (req, res) => {
+app.post("/api/goals", requireApiKey, (req, res) => {
   const { title, targetAmount } = req.body;
 
   res.status(201).json({
