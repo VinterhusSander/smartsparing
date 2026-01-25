@@ -17,6 +17,20 @@ Et sparemål representerer noe brukeren sparer til.
 
 > NB: API-et scaffoldes nå. Lagring/DB kan komme senere.
 
+## API-nøkkel (tilgangskontroll)
+
+Noen endepunkter i SmartSparing API-et er beskyttet med en API-nøkkel.
+For å få tilgang må klienten sende følgende HTTP-header:
+
+```
+x-api-key: supersecretkey
+```
+
+Dersom headeren mangler eller API-nøkkelen er feil, returnerer API-et:
+
+- Statuskode: `401 Unauthorized`
+- JSON-respons med feilmelding
+
 ---
 
 ## Endpoints
