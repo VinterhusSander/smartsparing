@@ -3,6 +3,8 @@ import cors from "cors";
 import { requireApiKey } from "./middleware/requireApiKey.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 import bcrypt from "bcrypt";
+import path from "path";
+import { fileURLToPath } from "url";
 import {
   createUser,
   findUserByUsername,
@@ -15,11 +17,17 @@ import {
 
 
 
+
 const app = express();
 const PORT = 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "../../public")));
+
 
 // Test-endepunkt for å sjekke at serveren kjører
 app.get("/health", (req, res) => {
