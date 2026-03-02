@@ -1,112 +1,135 @@
 import crypto from "crypto";
+import { pool } from "./db.js";
 
-// In-memory store (no database).
-// Data forsvinner når serveren restartes – helt ok for denne oppgaven.
+/**
+ * Goals holdes in-memory foreløpig (ikke krav i denne ukens oppgave)
+ */
+const goalsByUserId = new Map(); // userId -> Array<goal>
 
-const store = {
-  users: new Map(),        // userId -> user
-  usernameToId: new Map(), // username -> userId
-  tokens: new Map(),       // token -> userId
-  goalsByUserId: new Map(), // userId -> Array<goal>
-
-};
-
-export function generateId() {
-  return crypto.randomUUID();
+/**
+ * Helpers
+ */
+function mapDbUser(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    passwordHash: row.password_hash,
+    createdAt: new Date(row.created_at).toISOString(),
+    consent: {
+      tosVersion: row.tos_version,
+      privacyVersion: row.privacy_version,
+      acceptedTosAt: new Date(row.accepted_tos_at).toISOString(),
+      acceptedPrivacyAt: new Date(row.accepted_privacy_at).toISOString(),
+    },
+  };
 }
 
-export function generateToken() {
-  // 32 bytes => 64 hex chars
-  return crypto.randomBytes(32).toString("hex");
+/**
+ * USERS (PostgreSQL når pool finnes)
+ */
+export async function findUserByUsername(username) {
+  if (!pool) return null;
+
+  const result = await pool.query(
+    `SELECT * FROM users WHERE username = $1 LIMIT 1`,
+    [username]
+  );
+  const row = result.rows[0];
+  return row ? mapDbUser(row) : null;
 }
 
-export function findUserByUsername(username) {
-  const userId = store.usernameToId.get(username);
-  if (!userId) return null;
-  return store.users.get(userId) ?? null;
-}
+export async function createUser({ username, passwordHash, consent }) {
+  if (!pool) throw new Error("DB_NOT_CONFIGURED");
 
-export function createUser({ username, passwordHash, consent }) {
-  if (store.usernameToId.has(username)) {
-    const err = new Error("USERNAME_TAKEN");
-    err.code = "USERNAME_TAKEN";
-    throw err;
-  }
-
-  const id = generateId();
+  const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
-  const user = {
+  await pool.query(
+    `
+    INSERT INTO users (
+      id, username, password_hash, created_at,
+      tos_version, privacy_version, accepted_tos_at, accepted_privacy_at
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+    `,
+    [
+      id,
+      username,
+      passwordHash,
+      createdAt,
+      consent.tosVersion,
+      consent.privacyVersion,
+      consent.acceptedTosAt,
+      consent.acceptedPrivacyAt,
+    ]
+  );
+
+  return {
     id,
     username,
     passwordHash,
     createdAt,
-    consent: {
-      tosVersion: consent.tosVersion,
-      privacyVersion: consent.privacyVersion,
-      acceptedTosAt: consent.acceptedTosAt,
-      acceptedPrivacyAt: consent.acceptedPrivacyAt,
-    },
+    consent,
   };
-
-  store.users.set(id, user);
-  store.usernameToId.set(username, id);
-
-  return user;
 }
 
-export function createTokenForUser(userId) {
-  const token = generateToken();
-  store.tokens.set(token, userId);
+export async function createTokenForUser(userId) {
+  if (!pool) throw new Error("DB_NOT_CONFIGURED");
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const createdAt = new Date().toISOString();
+
+  await pool.query(
+    `INSERT INTO tokens (token, user_id, created_at) VALUES ($1,$2,$3)`,
+    [token, userId, createdAt]
+  );
+
   return token;
 }
 
-export function getUserByToken(token) {
-  const userId = store.tokens.get(token);
-  if (!userId) return null;
-  return store.users.get(userId) ?? null;
+export async function getUserByToken(token) {
+  if (!pool) return null;
+
+  const result = await pool.query(
+    `
+    SELECT u.*
+    FROM tokens t
+    JOIN users u ON u.id = t.user_id
+    WHERE t.token = $1
+    LIMIT 1
+    `,
+    [token]
+  );
+
+  const row = result.rows[0];
+  return row ? mapDbUser(row) : null;
 }
 
-export function deleteUserById(userId) {
-  const user = store.users.get(userId);
-  if (!user) return false;
+export async function deleteUserById(userId) {
+  if (!pool) return false;
 
-  store.usernameToId.delete(user.username);
+  // Tokens slettes automatisk pga ON DELETE CASCADE
+  const result = await pool.query(
+    `DELETE FROM users WHERE id = $1 RETURNING id`,
+    [userId]
+  );
 
-  for (const [token, uid] of store.tokens.entries()) {
-    if (uid === userId) store.tokens.delete(token);
-  }
-
-  store.users.delete(userId);
-  return true;
+  return result.rowCount > 0;
 }
 
-//GOALS
+/**
+ * GOALS (in-memory)
+ */
 export function getGoalsForUser(userId) {
-    return store.goalsByUserId.get(userId) ?? [];
-  }
-  
-  export function addGoalForUser(userId, goal) {
-    const existing = store.goalsByUserId.get(userId) ?? [];
-    existing.push(goal);
-    store.goalsByUserId.set(userId, existing);
-    return goal;
-  }
-  
-  export function deleteGoalsForUser(userId) {
-    store.goalsByUserId.delete(userId);
-  }
-  
+  return goalsByUserId.get(userId) ?? [];
+}
 
-// Kun for debugging i dev (kan fjernes senere)
-export function _debugDump() {
-  return {
-    users: Array.from(store.users.values()).map(u => ({
-      id: u.id,
-      username: u.username,
-      createdAt: u.createdAt,
-      consent: u.consent,
-    })),
-    tokensCount: store.tokens.size,
-  };
+export function addGoalForUser(userId, goal) {
+  const goals = goalsByUserId.get(userId) ?? [];
+  goals.push(goal);
+  goalsByUserId.set(userId, goals);
+}
+
+export function deleteGoalsForUser(userId) {
+  goalsByUserId.delete(userId);
 }

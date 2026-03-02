@@ -1,3 +1,4 @@
+import { initDb } from "./data/db.js";
 import express from "express";
 import cors from "cors";
 import { requireApiKey } from "./middleware/requireApiKey.js";
@@ -19,7 +20,7 @@ import {
 
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -64,7 +65,7 @@ app.post("/api/users", async (req, res) => {
     }
 
     // 3) Unikt username
-    const existing = findUserByUsername(username);
+    const existing = await findUserByUsername(username);
     if (existing) {
       return res.status(409).json({
         error: "USERNAME_TAKEN",
@@ -77,7 +78,7 @@ app.post("/api/users", async (req, res) => {
 
     // 5) Lagre bruker i in-memory store
     const now = new Date().toISOString();
-    const user = createUser({
+    const user = await createUser({
       username,
       passwordHash,
       consent: {
@@ -89,7 +90,7 @@ app.post("/api/users", async (req, res) => {
     });
 
     // 6) Lag token for denne brukeren
-    const token = createTokenForUser(user.id);
+    const token = await createTokenForUser(user.id);
 
     // 7) Returner trygg respons (ikke passwordHash)
     return res.status(201).json({
@@ -107,14 +108,14 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-app.delete("/api/users/me", requireAuth, (req, res) => {
+app.delete("/api/users/me", requireAuth, async (req, res) => {
   const userId = req.user.id;
 
   // 1) Slett brukerens personlige data (goals)
   deleteGoalsForUser(userId);
 
   // 2) Slett selve brukeren + tokens
-  const deleted = deleteUserById(userId);
+  const deleted = await deleteUserById(userId);
 
   if (!deleted) {
     return res.status(404).json({
@@ -155,6 +156,15 @@ app.post("/api/goals", requireAuth, requireApiKey, (req, res) => {
 
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+async function main() {
+  await initDb();
+
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+main().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });

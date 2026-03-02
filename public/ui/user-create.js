@@ -13,13 +13,13 @@ class UserCreate extends HTMLElement {
           <input id="password" type="password" placeholder="password (min 6 chars)" />
 
           <label>
-            <input id="tos" type="checkbox" />
-            Accept Terms of Service
-          </label>
-          <label>
-            <input id="privacy" type="checkbox" />
-            Accept Privacy Policy
-          </label>
+          <input id="tos" type="checkbox" />
+          Accept <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+        </label>
+        <label>
+          <input id="privacy" type="checkbox" />
+          Accept <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+        </label>
         </div>
 
         <button id="btn">Create</button>
