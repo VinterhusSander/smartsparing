@@ -6,10 +6,27 @@ meta {
 
 post {
   url: http://localhost:3000/api/goals
-  body: none
+  body: json
   auth: inherit
+}
+
+params:query {
+  : 
+}
+
+headers {
+  Authorization: Bearer 974217cf5998a811586f50b959eb939ebae6326b9c3cb8deff6b23993a0241b3
+  x-api-key: supersecretkey
+}
+
+body:json {
+  {
+    "title": "Ny PC",
+    "targetAmount": 12000
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }
