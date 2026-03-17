@@ -1,30 +1,42 @@
 import { UserController } from "../logic/user-controller.js";
+import { t } from "../logic/i18n.js";
 
 class UserCreate extends HTMLElement {
   controller = new UserController();
 
   connectedCallback() {
     this.innerHTML = `
-      <div style="border:1px solid #ccc; padding:12px; margin:12px 0;">
-        <h2>Create user</h2>
+      <section style="border:1px solid #ccc; padding:12px; margin:12px 0;" aria-labelledby="create-user-title">
+        <h2 id="create-user-title">${t("createUserTitle")}</h2>
 
         <div style="display:grid; gap:8px; margin-bottom:10px;">
-          <input id="username" type="text" placeholder="username" />
-          <input id="password" type="password" placeholder="password (min 6 chars)" />
+          <label for="username">${t("usernameLabel")}</label>
+          <input id="username" name="username" type="text" autocomplete="username" />
+
+          <label for="password">${t("passwordLabel")}</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" />
+          <small id="password-help">${t("passwordHelp")}</small>
 
           <label>
-          <input id="tos" type="checkbox" />
-          Accept <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
-        </label>
-        <label>
-          <input id="privacy" type="checkbox" />
-          Accept <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-        </label>
+            <input id="tos" type="checkbox" />
+            ${t("acceptTermsPrefix")} 
+            <a href="./terms.html" target="_blank" rel="noopener noreferrer">
+              ${t("termsOfService")}
+            </a>
+          </label>
+
+          <label>
+            <input id="privacy" type="checkbox" />
+            ${t("acceptPrivacyPrefix")} 
+            <a href="./privacy.html" target="_blank" rel="noopener noreferrer">
+              ${t("privacyPolicy")}
+            </a>
+          </label>
         </div>
 
-        <button id="btn">Create</button>
-        <div id="status" style="margin-top:10px;"></div>
-      </div>
+        <button id="btn" type="button">${t("createButton")}</button>
+        <div id="status" style="margin-top:10px;" aria-live="polite"></div>
+      </section>
     `;
 
     this.querySelector("#btn").addEventListener("click", () => this.onCreate());
@@ -40,7 +52,7 @@ class UserCreate extends HTMLElement {
     const acceptedPrivacy = this.querySelector("#privacy").checked;
 
     if (!username || !password) {
-      status.textContent = "Please fill in username and password.";
+      status.textContent = t("fillUsernamePassword");
       return;
     }
 
@@ -52,8 +64,12 @@ class UserCreate extends HTMLElement {
       });
 
       localStorage.setItem("authToken", result.token);
-      status.textContent = `✅ User created: ${result.username} (id: ${result.id})`;
-      // (valgfritt) gi beskjed til resten av appen
+
+      status.textContent = t("userCreated", {
+        username: result.username,
+        id: result.id,
+      });
+
       this.dispatchEvent(new CustomEvent("user:created", { bubbles: true, detail: result }));
     } catch (err) {
       status.textContent = `❌ ${err.message}`;
