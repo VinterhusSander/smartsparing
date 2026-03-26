@@ -1,4 +1,4 @@
-const CACHE_NAME = "smartsparing-v4";
+const CACHE_NAME = "smartsparing-v5";
 
 const URLS_TO_CACHE = [
   "/",
@@ -19,6 +19,11 @@ const URLS_TO_CACHE = [
   "/ui/user-create.js",
   "/ui/user-delete.js",
   "/ui/user-edit.js",
+  "/ui/goal-create.js",
+  "/ui/goal-list.js",
+  "/ui/saving-create.js",
+  "/ui/saving-list.js",
+  "/ui/savings-summary.js",
 ];
 
 self.addEventListener("install", (event) => {

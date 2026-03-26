@@ -4,6 +4,7 @@ import "./ui/user-delete.js";
 import "./ui/goal-create.js";
 import "./ui/saving-create.js";
 import "./ui/goal-list.js";
+import "./ui/saving-list.js";
 import "./ui/savings-summary.js";
 
 console.log("Components loaded ✅");

@@ -199,8 +199,7 @@ app.post("/api/savings", requireAuth, requireApiKey, async (req, res) => {
     if (!normalizedItemName) {
       return res.status(400).json({
         error: "BAD_REQUEST",
-        message: "Item name is required",
-      });
+        message: t(req, "itemNameRequired"),      });
     }
 
     const normalizedOriginalPrice = Number(originalPrice);
@@ -212,21 +211,21 @@ app.post("/api/savings", requireAuth, requireApiKey, async (req, res) => {
     ) {
       return res.status(400).json({
         error: "BAD_REQUEST",
-        message: "Prices must be valid numbers",
+        message: t(req, "invalidPrices"),
       });
     }
 
     if (normalizedOriginalPrice < 0 || normalizedDiscountPrice < 0) {
       return res.status(400).json({
         error: "BAD_REQUEST",
-        message: "Prices cannot be negative",
+        message: t(req, "negativePrices"),
       });
     }
 
     if (normalizedDiscountPrice > normalizedOriginalPrice) {
       return res.status(400).json({
         error: "BAD_REQUEST",
-        message: "Discount price cannot be greater than original price",
+        message: t(req, "invalidDiscount"),
       });
     }
 
@@ -245,7 +244,7 @@ app.post("/api/savings", requireAuth, requireApiKey, async (req, res) => {
       if (!goal) {
         return res.status(404).json({
           error: "GOAL_NOT_FOUND",
-          message: "Goal not found",
+          message: t(req, "goalNotFound"),
         });
       }
 

@@ -1,66 +1,117 @@
 # Feature Map – SmartSparing
 
-## MVP-funksjoner
+## 🎯 Kjernefunksjonalitet (implementert)
 
 ### Brukerkontoer
 
-- Registrer bruker (email + passord)
-- Logg inn
-- Logg ut
-- Brukere kan bare se og endre egne data
-
-### Sparemål
-
-- Opprett sparemål (tittel og målbeløp)
-- Se liste over egne sparemål
-- Se detaljer for ett sparemål (fremgang)
-- Endre sparemål
-- Slette sparemål
-
-### Sparingsregistreringer
-
-- Opprett sparing knyttet til et sparemål  
-  Felter: varenavn, ordinær pris, tilbudspris, dato  
-  Backend beregner spart beløp
-- Se sparinger for et sparemål
-- Endre sparing
-- Slette sparing
-
-### Deling (Share)
-
-- Generer delingslenke for et sparemål
-- Delingslenken viser (read-only):
-  - mål-tittel
-  - målbeløp
-  - total spart sum
-  - hvor mye som gjenstår
+- Registrer bruker (username + passord)
+- Bruker må godta Terms of Service og Privacy Policy
+- Bruker får autentiseringstoken
+- Slette egen bruker (inkludert data)
 
 ---
 
-## Tekniske krav
+### Sparemål (Goals)
+
+- Opprett sparemål (tittel + målbeløp)
+- Se liste over egne sparemål
+- Se progresjon per mål:
+  - spart så langt
+  - gjenstående beløp
+  - prosent fullført
+
+---
+
+### Sparing (Savings)
+
+- Registrer sparing:
+  - varenavn
+  - ordinær pris
+  - tilbudspris
+- Backend beregner spart beløp
+- Sparing kan knyttes til et mål (valgfritt)
+- Se liste over alle sparinger
+
+---
+
+### Oversikt
+
+- Se total spart:
+  - totalt spart
+  - spart til mål
+  - spart uten mål
+- Se antall registrerte sparinger
+
+---
+
+## 🧱 Tekniske krav (implementert)
 
 ### Client
 
-- Enkel webklient (HTML + JavaScript)
+- Webklient med HTML + JavaScript
+- Bygget med Web Components
+- Strukturert i:
+  - UI
+  - Logic
+  - Data
+
+---
 
 ### Server
 
-- Node.js-server med REST-lignende API
+- Node.js + Express
+- REST-lignende API
+- Middleware for:
+  - autentisering
+  - API-nøkkel
+
+---
 
 ### Database
 
-- Sky-basert PostgreSQL
-- Tabeller: users, goals, savings, goal_shares
+- PostgreSQL (Render)
+- Tabeller:
+  - users
+  - tokens
+  - goals
+  - savings
+
+---
 
 ### API
 
-- REST-lignende endepunkter for auth, mål, sparing og deling
+- REST-lignende endepunkter for:
+  - users
+  - goals
+  - savings
+- Progresjon beregnes i backend
+
+---
 
 ### PWA
 
-- Web app som kan installeres
-- App shell caches
+- Manifest
+- Service Worker
+- Caching av app shell
+
+---
 
 ### Offline-funksjonalitet
 
-- Appen kan åpnes offline og laste cached filer
+- Appen kan åpnes offline
+- Cached filer lastes fra service worker
+
+---
+
+## 🚀 Videre utvikling (ikke implementert)
+
+Mulige utvidelser:
+
+- Redigere bruker (PATCH /api/users/me)
+- Redigere sparemål
+- Slette sparemål
+- Redigere sparing
+- Slette sparing
+- Deling av sparemål (read-only link)
+- Progress bar i UI
+- Dark mode
