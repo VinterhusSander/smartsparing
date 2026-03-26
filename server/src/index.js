@@ -13,9 +13,13 @@ import {
   findUserByUsername,
   createTokenForUser,
   getGoalsForUser,
+  getGoalsWithProgressForUser,
   addGoalForUser,
+  getGoalByIdForUser,
+  addSavingForUser,
+  getSavingsForUser,
+  getSavingsSummaryForUser,
   deleteUserById,
-  deleteGoalsForUser,
 } from "./data/store.js";
 
 const app = express();
@@ -115,7 +119,6 @@ app.post("/api/users", async (req, res) => {
 app.delete("/api/users/me", requireAuth, async (req, res) => {
   const userId = req.user.id;
 
-  deleteGoalsForUser(userId);
   const deleted = await deleteUserById(userId);
 
   if (!deleted) {
@@ -132,26 +135,164 @@ app.delete("/api/users/me", requireAuth, async (req, res) => {
 });
 
 // GOALS
-app.get("/api/goals", requireAuth, (req, res) => {
-  const goals = getGoalsForUser(req.user.id);
-  res.json(goals);
+app.get("/api/goals", requireAuth, async (req, res) => {
+  try {
+    const goals = await getGoalsForUser(req.user.id);
+    res.json(goals);
+  } catch (err) {
+    res.status(500).json({
+      error: "SERVER_ERROR",
+      message: t(req, "serverError"),
+    });
+  }
 });
 
-app.post("/api/goals", requireAuth, requireApiKey, (req, res) => {
-  const { title, targetAmount } = req.body;
+app.get("/api/goals/progress", requireAuth, async (req, res) => {
+  try {
+    const goals = await getGoalsWithProgressForUser(req.user.id);
+    return res.json(goals);
+  } catch (err) {
+    return res.status(500).json({
+      error: "SERVER_ERROR",
+      message: t(req, "serverError"),
+    });
+  }
+});
 
-  const goal = {
-    id: `g_${Date.now()}`,
-    title: title ?? "Uten tittel",
-    targetAmount: Number.isFinite(targetAmount)
-      ? targetAmount
-      : Number(targetAmount) || 0,
-    createdAt: new Date().toISOString(),
-  };
+app.post("/api/goals", requireAuth, requireApiKey, async (req, res) => {
+  try {
+    const { title, targetAmount } = req.body;
 
-  addGoalForUser(req.user.id, goal);
+    const normalizedTitle =
+      typeof title === "string" && title.trim() ? title.trim() : "Uten tittel";
 
-  res.status(201).json(goal);
+    const normalizedTargetAmount = Number(targetAmount);
+
+    if (!Number.isFinite(normalizedTargetAmount) || normalizedTargetAmount < 0) {
+      return res.status(400).json({
+        error: "BAD_REQUEST",
+        message: t(req, "missingFields"),
+      });
+    }
+
+    const goal = await addGoalForUser(req.user.id, {
+      title: normalizedTitle,
+      targetAmount: normalizedTargetAmount,
+    });
+
+    res.status(201).json(goal);
+  } catch (err) {
+    res.status(500).json({
+      error: "SERVER_ERROR",
+      message: t(req, "serverError"),
+    });
+  }
+});
+
+app.post("/api/savings", requireAuth, requireApiKey, async (req, res) => {
+  try {
+    const { goalId = null, itemName, originalPrice, discountPrice } = req.body;
+
+    const normalizedItemName =
+      typeof itemName === "string" ? itemName.trim() : "";
+
+    if (!normalizedItemName) {
+      return res.status(400).json({
+        error: "BAD_REQUEST",
+        message: "Item name is required",
+      });
+    }
+
+    const normalizedOriginalPrice = Number(originalPrice);
+    const normalizedDiscountPrice = Number(discountPrice);
+
+    if (
+      !Number.isFinite(normalizedOriginalPrice) ||
+      !Number.isFinite(normalizedDiscountPrice)
+    ) {
+      return res.status(400).json({
+        error: "BAD_REQUEST",
+        message: "Prices must be valid numbers",
+      });
+    }
+
+    if (normalizedOriginalPrice < 0 || normalizedDiscountPrice < 0) {
+      return res.status(400).json({
+        error: "BAD_REQUEST",
+        message: "Prices cannot be negative",
+      });
+    }
+
+    if (normalizedDiscountPrice > normalizedOriginalPrice) {
+      return res.status(400).json({
+        error: "BAD_REQUEST",
+        message: "Discount price cannot be greater than original price",
+      });
+    }
+
+    let normalizedGoalId = null;
+
+    if (goalId !== null && goalId !== undefined && goalId !== "") {
+      if (typeof goalId !== "string") {
+        return res.status(400).json({
+          error: "BAD_REQUEST",
+          message: "goalId must be a string",
+        });
+      }
+
+      const goal = await getGoalByIdForUser(req.user.id, goalId);
+
+      if (!goal) {
+        return res.status(404).json({
+          error: "GOAL_NOT_FOUND",
+          message: "Goal not found",
+        });
+      }
+
+      normalizedGoalId = goalId;
+    }
+
+    const savedAmount = normalizedOriginalPrice - normalizedDiscountPrice;
+
+    const saving = await addSavingForUser(req.user.id, {
+      goalId: normalizedGoalId,
+      itemName: normalizedItemName,
+      originalPrice: normalizedOriginalPrice,
+      discountPrice: normalizedDiscountPrice,
+      savedAmount,
+    });
+
+    return res.status(201).json(saving);
+  } catch (err) {
+    return res.status(500).json({
+      error: "SERVER_ERROR",
+      message: t(req, "serverError"),
+    });
+  }
+});
+
+app.get("/api/savings", requireAuth, async (req, res) => {
+  try {
+    const savings = await getSavingsForUser(req.user.id);
+    return res.json(savings);
+  } catch (err) {
+    return res.status(500).json({
+      error: "SERVER_ERROR",
+      message: t(req, "serverError"),
+    });
+  }
+});
+
+app.get("/api/savings/summary", requireAuth, async (req, res) => {
+  try {
+    const summary = await getSavingsSummaryForUser(req.user.id);
+    return res.json(summary);
+  } catch (err) {
+    return res.status(500).json({
+      error: "SERVER_ERROR",
+      message: t(req, "serverError"),
+    });
+  }
 });
 
 // START SERVER

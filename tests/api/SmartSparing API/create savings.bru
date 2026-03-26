@@ -1,0 +1,30 @@
+meta {
+  name: create savings
+  type: http
+  seq: 7
+}
+
+post {
+  url: http://localhost:3000/api/savings
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer b3c58f0259e1b5e04d44b168b41cf4c3f413f2d68c0d9d812cbe1e67bb537f9a
+  x-api-key: supersecretkey
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "itemName": "Ost",
+    "originalPrice": 150,
+    "discountPrice": 100
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

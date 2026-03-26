@@ -1,0 +1,20 @@
+meta {
+  name: get progress
+  type: http
+  seq: 12
+}
+
+get {
+  url: http://localhost:3000/api/goals/progress
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer b3c58f0259e1b5e04d44b168b41cf4c3f413f2d68c0d9d812cbe1e67bb537f9a
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

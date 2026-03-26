@@ -9,7 +9,7 @@ if (connectionString) {
   pool = new Pool({
     connectionString,
     ssl: {
-      rejectUnauthorized: false, // required for Render
+      rejectUnauthorized: false,
     },
   });
 
@@ -36,6 +36,25 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS tokens (
       token TEXT PRIMARY KEY,
       user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS goals (
+      id UUID PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      target_amount NUMERIC(12, 2) NOT NULL,
+      created_at TIMESTAMP NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS savings (
+      id UUID PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      goal_id UUID REFERENCES goals(id) ON DELETE SET NULL,
+      item_name TEXT NOT NULL,
+      original_price NUMERIC(12, 2) NOT NULL,
+      discount_price NUMERIC(12, 2) NOT NULL,
+      saved_amount NUMERIC(12, 2) NOT NULL,
       created_at TIMESTAMP NOT NULL
     );
   `);
